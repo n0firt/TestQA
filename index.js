@@ -17,10 +17,13 @@ let driver = new Builder().forBrowser('chrome').build();
         await assert.strictEqual('Яндекс', await driver.getTitle());
 
         //search your words
-        await driver.wait(until.elementLocated(By.name('text')), 5000).sendKeys('расчет расстояний между городами', Key.ENTER);
+        let text = await driver.wait(until.elementLocated(By.name('text')), 5000);
+        await checkVisibleAndClick(text);
+        await text.sendKeys('расчет расстояний между городами', Key.ENTER);
 
         //click avtodispetcher site link
-        await driver.wait(until.elementLocated(By.css('a[href="https://www.avtodispetcher.ru/distance/"]')), 5000).click();
+        let link = await driver.wait(until.elementLocated(By.css('a[href="https://www.avtodispetcher.ru/distance/"]')), 5000)
+        await checkVisibleAndClick(link);
 
         //get all tabs(count would be 2)
         let windows = await driver.getAllWindowHandles();
@@ -35,21 +38,26 @@ let driver = new Builder().forBrowser('chrome').build();
         await assert.strictEqual('Расчет расстояний между городами', await driver.getTitle());
 
         //fill the form
-        await driver.findElement(By.name('from')).sendKeys('Тула');
+        let from = await driver.findElement(By.name('from'));
+        await checkVisibleAndClick(from);
+        await from.sendKeys('Тула');
         //
-        await driver.findElement(By.name('to')).sendKeys('Санкт-Петербург');
+        let to = await driver.findElement(By.name('to'));
+        await checkVisibleAndClick(to);
+        await to.sendKeys('Санкт-Петербург');
         //
         let fc = await driver.findElement(By.name('fc'));
-        await fc.click();
+        await checkVisibleAndClick(fc);
         await fc.sendKeys(Key.BACK_SPACE, 9);
         //
         let fp = await driver.findElement(By.name('fp'));
-        await fp.click();
+        await checkVisibleAndClick(fp);
         await fp.sendKeys(Key.BACK_SPACE, Key.BACK_SPACE, 46);
         //fill the form end
 
         //submit the form
-        await driver.findElement(By.css('input[type="submit"][value="Рассчитать"]')).click();
+        let submit1 = await driver.findElement(By.css('input[type="submit"][value="Рассчитать"]'));
+        await checkVisibleAndClick(submit1);
 
         //wait for page load
         await waitForPageLoad();
@@ -61,20 +69,20 @@ let driver = new Builder().forBrowser('chrome').build();
         await checkResults('897', '3726');
 
         //click on 'change the way' button
-        await driver.findElement(By.css('span.anchor')).click();
+        let anchor = await driver.findElement(By.css('span.anchor'));
+        await checkVisibleAndClick(anchor);
 
         //fill the input
         let v = await driver.wait(until.elementLocated(By.name('v')), 5000);
+        await checkVisibleAndClick(v);
         await driver.wait(until.elementIsVisible(v), 3000).sendKeys('Великий Новгород');
         
         //wait for 30 secs
         await driver.sleep(30000);                                                                                          //???
 
         //scroll to the submit button, because it may be hidden and click on it
-        let submitButton2 = await driver.findElement(By.css('input[type="submit"][value="Рассчитать"]'));
-        await driver.executeScript("arguments[0].scrollIntoView()", submitButton2);
-        await driver.sleep(300);
-        await submitButton2.click();
+        let submit2 = await driver.findElement(By.css('input[type="submit"][value="Рассчитать"]'));
+        await checkVisibleAndClick(submit2);
 
         //check new results
         await checkResults('966', '4002');
@@ -108,3 +116,16 @@ let checkResults = async (result1, result2) => {
     let text = await driver.wait(until.elementIsVisible(element2), 5000).getText();
     await assert.strictEqual(true, await text.includes(result2));
 };
+//func which scroll page to element if its not visible
+let checkVisibleAndClick = async element => {
+    try
+    {
+        await element.click();
+    }
+    catch
+    {
+        await driver.executeScript("arguments[0].scrollIntoView()", element);
+        await driver.sleep(300);
+        await element.click(); 
+    }
+}
